@@ -3,7 +3,7 @@
 ## Short description (Brief overview)
 
 ```text
-Load a save that has a local co-op farmhand and split-screen opens automatically with that farmhand already on the second screen. No Start press, no slot picking. Saves without a farmhand load single player as normal.
+Load a save that has a local co-op farmhand and split-screen opens automatically with that farmhand already on the second screen. No Start press, no slot picking. Saves without a farmhand load single player as normal. Steam Deck friendly.
 ```
 
 ## Full description (BBCode)
@@ -37,7 +37,7 @@ Load a save that has a local co-op farmhand, and the mod opens split-screen and 
 [list]
 [*][url=https://smapi.io]SMAPI[/url] 4.5.0 or later
 [*]Stardew Valley 1.6
-[*]A gamepad for player 2
+[*]A gamepad for player 2 that the host isn't using. On Steam Deck, or if the host plays on a gamepad, connect a second controller.
 [/list]
 
 [size=4][b]Install[/b][/size]
@@ -54,23 +54,36 @@ Edit config.json in the mod folder. It is created the first time you run the gam
 [list]
 [*][b]Enabled[/b] (default: true) - Turn the mod on or off.
 [*][b]FarmhandName[/b] (default: empty) - Farmhand to load, case-insensitive. Empty means the most recently played eligible farmhand.
-[*][b]PlayerIndex[/b] (default: One) - Controller for the second screen: One, Two, Three or Four. An invalid value logs a warning and falls back to One.
-[*][b]HostUsesKeyboard[/b] (default: true) - With PlayerIndex set to One, the host keeps keyboard and mouse and controller One goes to the second screen (the same as vanilla). If you set this to false, set PlayerIndex to Two or higher, or both screens share controller One.
+[*][b]PlayerIndex[/b] (default: Auto) - Controller for the second screen: Auto, One, Two, Three or Four. An invalid value logs a warning and falls back to Auto.
+[*][b]ConfigVersion[/b] - Managed by the mod. Don't edit it.
 [/list]
+
+[b]How Auto picks player 2's controller:[/b]
+[list=1]
+[*]The first connected controller from Two to Four that the host isn't using.
+[*]Otherwise controller One, but only if the host plays with keyboard and mouse. The host keeps keyboard and mouse, the same as the vanilla join menu.
+[*]Otherwise split-screen doesn't start and the SMAPI log shows a warning.
+[/list]
+The mod reads the host's input from the game's Gamepad Mode setting and last input. On Steam Deck the host counts as a gamepad player and keeps the built-in controls.
+
+The mod never gives the host's controller to player 2. If you set PlayerIndex to the controller the host is playing on, it logs a warning and uses Auto instead.
+
+[b]Upgrading from 1.0.0:[/b] HostUsesKeyboard was removed. The mod updates config.json on first launch: the old default (PlayerIndex One with HostUsesKeyboard true) becomes Auto, and any other PlayerIndex is kept.
 
 Example:
 [code]{
+  "ConfigVersion": 1,
   "Enabled": true,
   "FarmhandName": "",
-  "PlayerIndex": "One",
-  "HostUsesKeyboard": true
+  "PlayerIndex": "Auto"
 }[/code]
 
 [size=4][b]Limitations[/b][/size]
 [list]
 [*]Local split-screen only. It does not start or join online or LAN co-op.
 [*]Load the save from the main Load menu. Saves loaded through Co-op > Host are skipped, so use the vanilla join menu there.
-[*]Player 2 needs a gamepad. If no controller is connected for the configured PlayerIndex, split-screen still starts and the SMAPI log shows a warning; connect the controller afterward to control the farmhand.
+[*]Player 2 needs a gamepad the host isn't using. With PlayerIndex Auto and no free controller, split-screen doesn't start and the SMAPI log says why. On Steam Deck that means connecting a second controller.
+[*]With an explicit PlayerIndex (not the host's controller), split-screen starts even if that controller isn't connected yet, and the log shows a warning.
 [*]It loads one existing farmhand. It does not create new farmhands; make one through vanilla split-screen first.
 [*]If the farmhand slot does not appear within about 30 seconds, or the menu lists other farmhands but not the target, the mod logs a warning and leaves the vanilla farmhand menu open so you can pick manually.
 [/list]
@@ -78,9 +91,10 @@ Example:
 [size=4][b]Troubleshooting[/b][/size]
 [list]
 [*]Open the SMAPI log and search for "Auto Split-Screen Co-op".
+[*]"Controllers: host pad=..., hostOnKeyboard=..., connected=[...], ..., player 2 pad=..." shows which controller each screen got.
 [*]"Starting split-screen for farmhand ..." followed by "Loading farmhand ... on screen 1." means it worked.
 [*]"Not starting split-screen: ..." gives the reason it skipped. Some reasons are logged only at TRACE level.
-[*]Warnings cover a missing controller, an invalid PlayerIndex, and a farmhand slot that never appeared.
+[*]Warnings cover no free controller, a PlayerIndex that is the host's controller, an invalid PlayerIndex, and a farmhand slot that never appeared.
 [*]When reporting a problem, upload your log at [url=https://smapi.io/log]smapi.io/log[/url] and post the link.
 [/list]
 
@@ -88,5 +102,6 @@ Example:
 The mod uses no Harmony patches and calls only the game's own split-screen and farmhand menu methods.
 
 [size=4][b]Version[/b][/size]
+1.1.0 - Fixed the host losing its controller on Steam Deck and other gamepad hosts (player 2 was given controller One). New PlayerIndex default Auto picks a free controller. HostUsesKeyboard removed (detected automatically); existing configs are migrated.
 1.0.0 - Initial release.
 ```

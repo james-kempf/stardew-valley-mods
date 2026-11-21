@@ -25,6 +25,13 @@ internal sealed class ModEntry : Mod
     public override void Entry(IModHelper helper)
     {
         this.Config = helper.ReadConfig<ModConfig>();
+        string oldIndex = this.Config.PlayerIndex;
+        if (this.Config.Migrate())
+        {
+            helper.WriteConfig(this.Config);
+            if (oldIndex != this.Config.PlayerIndex)
+                this.Monitor.Log($"Migrated config.json to version {ModConfig.CurrentVersion}: PlayerIndex '{oldIndex}' -> '{this.Config.PlayerIndex}', HostUsesKeyboard removed (now detected automatically).", LogLevel.Info);
+        }
         helper.Events.GameLoop.SaveLoaded += this.OnSaveLoaded;
         helper.Events.GameLoop.UpdateTicked += this.OnUpdateTicked;
         helper.Events.GameLoop.ReturnedToTitle += this.OnReturnedToTitle;
@@ -84,23 +91,33 @@ internal sealed class ModEntry : Mod
             return;
         }
 
-        if (!Enum.TryParse(this.Config.PlayerIndex, ignoreCase: true, out PlayerIndex index) || !Enum.IsDefined(index))
+        Game1 host = GameRunner.instance.gameInstances[0];
+        int hostPad = (int)host.instancePlayerOneIndex;
+        var mode = Game1.options.gamepadMode;
+        // Same rule the game uses for the host's input: ForceOff, or Auto while the last input was keyboard/mouse.
+        // On Steam Deck the game ignores keyboard/mouse, so gamepadControls stays true and the host counts as a gamepad user.
+        bool hostOnKeyboard = hostPad == PadSelection.NoPad
+            || mode == Options.GamepadModes.ForceOff
+            || (mode == Options.GamepadModes.Auto && !Game1.options.gamepadControls);
+        string connected = string.Join(",", Enumerable.Range(0, 4).Where(IsPadConnected).Select(PadSelection.Name));
+
+        var choice = PadSelection.Choose(this.Config.PlayerIndex, hostPad, hostOnKeyboard, IsPadConnected);
+        this.Monitor.Log(
+            $"Controllers: host pad={PadSelection.Name(hostPad)}, hostOnKeyboard={hostOnKeyboard}, gamepadMode={mode}, gamepadControls={Game1.options.gamepadControls}, "
+            + $"connected=[{connected}], PlayerIndex config={this.Config.PlayerIndex}, player 2 pad={(choice.Pad.HasValue ? PadSelection.Name(choice.Pad.Value) : "none")}{(choice.HostGivesUpPad ? " (host releases it, keeps keyboard/mouse)" : "")}.",
+            LogLevel.Info);
+        foreach (string warning in choice.Warnings)
+            this.Monitor.Log(warning, LogLevel.Warn);
+        if (choice.Pad is not int pad)
         {
-            this.Monitor.Log($"Invalid PlayerIndex '{this.Config.PlayerIndex}' in config (use One, Two, Three or Four); using One.", LogLevel.Warn);
-            index = PlayerIndex.One;
+            this.Monitor.Log($"Not starting split-screen: {choice.SkipReason}.", LogLevel.Warn);
+            return;
         }
 
-        if (index == PlayerIndex.One)
-        {
-            if (this.Config.HostUsesKeyboard)
-                // Same as vanilla LocalCoopJoinMenu: host gives up controller One and keeps keyboard/mouse.
-                GameRunner.instance.gameInstances[0].instancePlayerOneIndex = (PlayerIndex)(-1);
-            else
-                this.Monitor.Log("PlayerIndex is One but HostUsesKeyboard is false, so both screens share controller One. Set PlayerIndex to Two or HostUsesKeyboard to true.", LogLevel.Warn);
-        }
-
-        if (!GamePad.GetState(index).IsConnected)
-            this.Monitor.Log($"No controller connected for player {index}; starting split-screen anyway. Connect one to control '{farmhand.Name}'.", LogLevel.Warn);
+        if (choice.HostGivesUpPad)
+            // Same as vanilla LocalCoopJoinMenu: the keyboard host stops reading this pad so only player 2 uses it.
+            host.instancePlayerOneIndex = (PlayerIndex)(-1);
+        var index = (PlayerIndex)pad;
 
         this.TargetFarmhandId = farmhand.UniqueMultiplayerID;
         this.TargetFarmhandName = farmhand.Name;
@@ -108,6 +125,8 @@ internal sealed class ModEntry : Mod
         this.Monitor.Log($"Starting split-screen for farmhand '{farmhand.Name}' ({farmhand.UniqueMultiplayerID}) on controller {index}.", LogLevel.Info);
         GameRunner.instance.AddGameInstance(index);
     }
+
+    private static bool IsPadConnected(int pad) => GamePad.GetState((PlayerIndex)pad).IsConnected;
 
     private string? GetSkipReason()
     {
