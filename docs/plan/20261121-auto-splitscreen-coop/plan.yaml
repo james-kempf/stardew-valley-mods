@@ -1,0 +1,76 @@
+plan_id: 20261121-auto-splitscreen-coop
+status: pending
+tldr: |
+  One gem-implementer task builds SMAPI C# mod AutoSplitScreenCoop. On host save load it calls
+  GameRunner.instance.AddGameInstance(PlayerIndex) directly (vanilla LocalCoopJoinMenu path, minus the Start-press poll),
+  then on the new screen auto-activates the chosen FarmhandMenu.FarmhandSlot (vanilla click path, minus the click).
+  Public game API only; no Harmony, no reflection, no input injection. Runtime check is done by the user.
+created_at: "2026-11-21"
+created_by: gem-planner
+revision: 1
+replan_count: 0
+planner_revision_used: false
+
+decisions:
+  - "Single task: one owner, one small project, no ordering split; README coalesced into implementer task (same files/context)."
+  - "No Harmony (rung: platform/stdlib reuse). Every needed member is public in SDV 1.6.15: GameRunner.AddGameInstance/RemoveGameInstance, Game1.instancePlayerOneIndex, FarmhandMenu.client/gettingFarmhands/approvingFarmhand/MenuSlots, FarmhandMenu.FarmhandSlot.Farmer/Activate()."
+  - "Drive the vanilla flow (AddGameInstance -> new instance opens FarmhandMenu over local server -> FarmhandSlot.Activate) instead of re-implementing client/server join; keeps auth, cabin assignment, and server approval in game code."
+  - "Cross-screen handoff uses plain (non-PerScreen) ModEntry fields: host screen sets target farmhand id, new screen consumes it. PerScreen<T> would isolate the value and break the handoff."
+  - "Trigger from UpdateTicked (screen 0) after SaveLoaded sets a pending flag, not inside SaveLoaded itself, so instance creation happens during a normal game update tick (same context vanilla LocalCoopJoinMenu.update uses)."
+  - "Missing gamepad: still start split-screen and log a Warn (per planning_context preference); player can connect pad afterward."
+  - "No independent tester task: game cannot be launched by agents; runtime verification is a documented manual step for the user."
+
+assumptions:
+  - "SDK 8.0.131 is installed (verified `dotnet --list-sdks`); building net6.0 on it yields NETSDK1138 EOL warning only; acceptance is zero errors."
+  - "Default ModBuildConfig deploy copies the new mod folder into the real Mods folder; that adds a folder and does not modify other mods. If deploy is unwanted, implementer leaves default and README notes `EnableModDeploy`."
+  - "SMAPI 4.5.2 raises UpdateTicked once per screen with Context.ScreenId set; ModEntry instance is shared across screens."
+  - "Eligible farmhand = entry in Game1.netWorldState.Value.farmhandData with isCustomized.Value == true and !isActive(); most-recent = max disconnectDay.Value, tiebreak max millisecondsPlayed."
+  - "Mod name/folder: AutoSplitScreenCoop; UniqueID JamesKempf.AutoSplitScreenCoop."
+
+shared_context: {}
+
+tasks:
+  - id: T1
+    title: Implement AutoSplitScreenCoop SMAPI mod + README
+    description: |
+      Rung: platform reuse (vanilla split-screen join flow via public game API); new code only for trigger + slot selection glue.
+      Create /home/jkempf/Repositories/stardew-valley-mods/AutoSplitScreenCoop/ per CLAUDE.md (csproj net6.0, Version 1.0.0,
+      Nullable enable, Pathoschild.Stardew.ModBuildConfig 4.4.0, manifest.json with %ProjectVersion%, MinimumApiVersion 4.5.0,
+      UniqueID JamesKempf.AutoSplitScreenCoop, no UpdateKeys), ModEntry.cs, ModConfig.cs, README.md.
+      Create StardewValleyMods.sln at repo root if absent and `dotnet sln add` the project. Run `dotnet build`.
+      Do not launch the game.
+    wave: 1
+    depends_on: []
+    agent: gem-implementer
+    status: completed
+    retries_used: 0
+    acceptance_criteria:
+      - "Folder AutoSplitScreenCoop/ contains AutoSplitScreenCoop.csproj (net6.0, ModBuildConfig 4.4.0, no EnableHarmony), manifest.json (UniqueID JamesKempf.AutoSplitScreenCoop, EntryDll AutoSplitScreenCoop.dll, Version %ProjectVersion%), ModEntry.cs, ModConfig.cs, README.md."
+      - "Config read via Helper.ReadConfig<ModConfig>() with fields: Enabled (bool, true), FarmhandName (string, empty = most recently played eligible farmhand), PlayerIndex (string/enum One..Four, default One), HostUsesKeyboard (bool, default true)."
+      - "Host trigger guarded by all of: config.Enabled; Context.IsMainPlayer; Context.ScreenId == 0; !Context.IsSplitScreen (GameRunner.instance.gameInstances.Count == 1); !Game1.IsClient; Game1.game1.IsLocalCoopJoinable(); >=1 eligible farmhand (isCustomized && !isActive()) and, if FarmhandName set, a case-insensitive name match. Any guard false -> no instance created, Trace/Info log only."
+      - "Pending flag set in GameLoop.SaveLoaded, cleared in GameLoop.ReturnedToTitle; AddGameInstance called at most once per save load, from GameLoop.UpdateTicked on screen 0 when Context.IsWorldReady and Game1.gameMode == 3."
+      - "Before AddGameInstance: if PlayerIndex == One and HostUsesKeyboard, set GameRunner.instance.gameInstances[0].instancePlayerOneIndex = (PlayerIndex)(-1) (mirrors LocalCoopJoinMenu.update). If GamePad.GetState(index).IsConnected is false, log Warn and continue."
+      - "New screen (UpdateTicked, Context.ScreenId != 0, target id pending): when Game1.activeClickableMenu is FarmhandMenu fm && fm.client != null && !fm.gettingFarmhands && !fm.approvingFarmhand && fm.MenuSlots.Count > 0, find FarmhandMenu.FarmhandSlot whose Farmer.UniqueMultiplayerID == target id and call slot.Activate() exactly once, then clear target. If slots are populated but target absent, log Warn and fall back to the vanilla menu (do not dispose) so the player can pick manually."
+      - "No use of input injection: no SButton suppression/simulation, no Game1.oldPadState/oldKBState writes, no receiveLeftClick/receiveGamePadButton calls, no IsStartDown/startButtonState manipulation (grep check)."
+      - "`dotnet build AutoSplitScreenCoop/AutoSplitScreenCoop.csproj` exits 0 with 0 errors (NETSDK1138 warning acceptable)."
+      - "README.md (<= ~60 lines): what it does, eligibility rules, each config option with default, missing-gamepad behavior, install (build deploys to Mods/ or copy bin zip), manual test steps (load save with customized farmhand -> split-screen opens with that farmhand; save without -> single player; check SMAPI-latest.txt for mod log lines)."
+    handoff:
+      constraints:
+        - "No Harmony, no reflection: all members below are public."
+        - "Do not modify other mods in Mods/ or any saves. Do not launch the game. Never commit."
+        - "Decompile only into the scratchpad if re-checking internals; existing decompile: /tmp/claude-1000/-home-jkempf-Repositories-stardew-valley-mods/f7e6c766-d587-4bb2-86af-0c28378988a9/scratchpad/decomp (ilspycmd at ../tools, run with DOTNET_ROLL_FORWARD=Major)."
+        - "Handoff state between screens must be plain fields (not PerScreen<T>)."
+      relevant_context:
+        - "GameRunner.instance (StardewValley.GameRunner, static field `instance`); public List<Game1> gameInstances; public virtual void AddGameInstance(PlayerIndex player_index); public virtual void RemoveGameInstance(Game1 instance); public int GetMaxSimultaneousPlayers() => 4. SMAPI SGameRunner overrides Add/RemoveGameInstance and calls base (safe to call)."
+        - "AddGameInstance internally: saves current instance, on instance[0] calls Game1.StartLocalMultiplayerIfNecessary() (multiplayerMode 0 -> 2, multiplayer.StartLocalMultiplayerServer() => new GameServer(local_multiplayer: true)), creates Game1(player_index, index), restores current instance. Vanilla caller: StardewValley.Menus/LocalCoopJoinMenu.cs update()."
+        - "Game1: public bool IsLocalCoopJoinable() (false if gameInstances.Count >= 4 or IsClient); public PlayerIndex instancePlayerOneIndex; public int instanceIndex; bool IsMainInstance; static int gameMode (3 = playing). Game1.ShowLocalCoopJoinMenu() only opens the press-Start menu; do not use it."
+        - "New instance (instanceIndex > 0) on update with activeClickableMenu == null && ticks > 1 sets activeClickableMenu = new FarmhandMenu(multiplayer.InitClient(new LidgrenClient(\"localhost\"))) (Game1.cs ~5650). Menu connects after first draw, receives availableFarmhands."
+        - "StardewValley.Menus.FarmhandMenu : LoadGameMenu: public Client client; public bool gettingFarmhands; public bool approvingFarmhand; public virtual List<MenuSlot> MenuSlots (from LoadGameMenu). checkFarmhandRequest/sendAvailableFarmhands populate slots only when GameServer.isGameAvailable() (not festival/wedding/intro/new-day sync, DayOfMonth != 0) - so slots may appear later; keep polling."
+        - "public class FarmhandMenu.FarmhandSlot : LoadGameMenu.SaveFileSlot: public Farmer Farmer; public override void Activate() -> Game1.game1.loadForNewGame(); Game1.player = Farmer; client.sendPlayerIntroduction(); approvingFarmhand = true; Game1.gameMode = 6. Vanilla click path calls exactly this after ActivateDelay; calling Activate() directly skips only the click/sound/delay. BelongsToAnotherPlayer() is always false on non-main instance."
+        - "Server offers farmhands from Game1.netWorldState.Value.farmhandData (NetFarmerCollection-like; iterate .Values or FieldDict.Values) where !isActive() && IsFarmhandAvailable (TryAssignFarmhandHome). Uncustomized slots (new farmhand) are also offered; filter Farmer.isCustomized.Value == true."
+        - "Farmer fields: NetInt disconnectDay (DaysPlayed at last disconnect, -1 never), ulong millisecondsPlayed, string Name, long UniqueMultiplayerID, NetBool isCustomized."
+        - "Gamepad check: Microsoft.Xna.Framework.Input.GamePad.GetState(PlayerIndex).IsConnected (read-only state query, not input injection)."
+        - "If target slot never appears and user must abort: disposing the menu ((IDisposable)fm).Dispose() disconnects and calls RemoveGameInstance for the non-main instance (FarmhandMenu.Dispose); Game1.exitActiveMenu() does NOT dispose. Fallback chosen here: leave vanilla menu."
+      high_risk_signals: []
+      critic_signals:
+        - "Runtime behavior unverifiable by agents; correctness of cross-screen timing relies on decompiled-flow reading."
