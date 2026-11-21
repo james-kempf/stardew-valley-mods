@@ -1,0 +1,19 @@
+# .NET build output
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+*.DotSettings.user
+TestResults/
+
+# ModBuildConfig release zips
+*.zip
+
+# Generated at runtime by SMAPI from mod defaults
+config.json
+
+# Game content extracted with StardewXnbHack (never commit)
+Content (unpacked)/
