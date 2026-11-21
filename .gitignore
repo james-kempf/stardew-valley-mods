@@ -20,3 +20,4 @@ Content (unpacked)/
 
 # Collected release zips (build-release.sh)
 dist/
+docs/
