@@ -17,3 +17,6 @@ config.json
 
 # Game content extracted with StardewXnbHack (never commit)
 Content (unpacked)/
+
+# Collected release zips (build-release.sh)
+dist/

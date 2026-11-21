@@ -204,7 +204,7 @@ Extract the StardewXnbHack Linux release into the game folder and run `./Stardew
 ## Release
 
 1. Bump `<Version>` (C#) or manifest `Version` (CP) using semver.
-2. Rebuild. The zip is in `<ModName>/bin/`. For CP, zip the `[CP] <ModName>` folder so the archive contains the folder.
+2. Run `./build-release.sh` to Release-build every `*/*.csproj` mod and collect the zips in `dist/` (`--deploy` also deploys to `Mods/`; `--help` for details). For CP, zip the `[CP] <ModName>` folder so the archive contains the folder.
 3. Upload to Nexus Mods (nexusmods.com/stardewvalley) and/or ModDrop. Add the page ID to `UpdateKeys` and release again so SMAPI update checks work.
 
 ## Rules for Claude

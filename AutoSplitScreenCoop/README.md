@@ -2,6 +2,15 @@
 
 When the host loads a save that has a local co-op farmhand, this mod opens split-screen and loads that farmhand into the second screen. You don't need to press Start or pick a slot. If the save has no eligible farmhand, the game stays single player.
 
+## Requirements
+
+- [SMAPI](https://smapi.io) 4.5.0 or later
+- Stardew Valley 1.6
+- A gamepad for player 2
+- A save that already has a customized farmhand (create one first through vanilla split-screen or co-op)
+
+Building from source also needs the .NET SDK 8 or later (the project targets `net6.0`).
+
 ## How it works
 
 1. After a save loads on the main screen, the mod calls the game's own `GameRunner.AddGameInstance` (the same call the vanilla "press Start to join" menu makes).
@@ -30,8 +39,6 @@ It does not simulate input and does not use Harmony.
 
 - From source: `dotnet build AutoSplitScreenCoop/AutoSplitScreenCoop.csproj` builds and copies the mod to `<game>/Mods/AutoSplitScreenCoop`. To skip that copy, add `<EnableModDeploy>false</EnableModDeploy>` to the csproj.
 - From zip: unzip `bin/Debug/net6.0/AutoSplitScreenCoop 1.0.0.zip` into `<game>/Mods/`.
-
-Requires SMAPI 4.5.0+ and Stardew Valley 1.6.
 
 ## Manual test
 
