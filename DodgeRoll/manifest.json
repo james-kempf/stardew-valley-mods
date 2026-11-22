@@ -1,0 +1,13 @@
+{
+  "$schema": "https://smapi.io/schemas/manifest.json",
+  "Name": "Dodge Roll",
+  "Author": "Jomeeze",
+  "Version": "%ProjectVersion%",
+  "Description": "Click the left stick to do a Dark Souls style dodge roll with brief invincibility frames, paid for with stamina.",
+  "UniqueID": "Jomeeze.DodgeRoll",
+  "EntryDll": "DodgeRoll.dll",
+  "MinimumApiVersion": "4.5.0",
+  "Dependencies": [
+    { "UniqueID": "spacechase0.GenericModConfigMenu", "IsRequired": false }
+  ]
+}
