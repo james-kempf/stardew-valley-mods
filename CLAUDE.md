@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Purpose
 
-Monorepo for Stardew Valley mods (SMAPI C# mods and Content Patcher content packs). No mods exist yet.
+Monorepo for Stardew Valley mods (SMAPI C# mods and Content Patcher content packs). Mods: `AutoSplitScreenCoop`, `DodgeRoll` (both C#).
 
 ## Versions (checked 2026-11-21)
 
@@ -25,8 +25,7 @@ Re-check these before pinning versions in new projects. stardewvalleywiki.com bl
 - SMAPI is installed: the `StardewValley` launcher is SMAPI's bash script (original saved as `StardewValley-original`), so launching from Steam starts SMAPI.
 - `Mods/` already holds ~250 player mods (incl. ContentPatcher, ConsoleCommands, SaveBackup). Builds deploy into this same folder by default; see "Isolated test mods folder".
 - SMAPI log: `~/.config/StardewValley/ErrorLogs/SMAPI-latest.txt`. Saves: `~/.config/StardewValley/Saves`.
-- `dotnet` is NOT installed. Fedora/Nobara repos offer `dotnet-sdk-8.0`, `-9.0`, `-10.0`, `-11.0` only (no 6.0).
-  - The wiki's Get Started guide says to install the .NET 6 SDK. Options: Microsoft's `dotnet-install.sh --channel 6.0`, or a newer SDK (e.g. `sudo dnf install dotnet-sdk-8.0`) building `net6.0`. Unverified: that ModBuildConfig 4.4.0 works without warnings on SDK 8+; expect an end-of-life warning (NETSDK1138) for `net6.0`. Ask the user before installing anything.
+- .NET SDK 8.0.131 is installed and builds the `net6.0` mods. Expected warning: `CS9057` (ModBuildConfig 4.4.0's analyzer references a newer compiler than SDK 8 ships); the build still succeeds. Ask the user before installing anything else.
 
 ## Choosing a mod type
 
@@ -45,14 +44,18 @@ stardew-valley-mods/
     ModEntry.cs
     i18n/default.json            # optional
     assets/                      # optional
+    README.md
+    NEXUS.md                     # mod page text (required, see "Mod page deliverables")
+    nexus/cover.svg, cover.png   # mod page cover (required)
   [CP] <ModName>/                # content pack
     manifest.json
     content.json
     assets/
+  tools/cover/                   # cover generator (gen_cover.py + coop layout, layout_<name>.py per other layout, render.sh, README.md)
 ```
 
 - One folder per mod. Add C# projects to the solution with `dotnet sln add <ModName>/<ModName>.csproj`.
-- UniqueID convention: `JamesKempf.<ModName>` (no spaces or special characters), unless the user specifies otherwise. Never change a released mod's UniqueID.
+- UniqueID convention: `Jomeeze.<ModName>` (no spaces or special characters), author `Jomeeze`, unless the user specifies otherwise. Never change a released mod's UniqueID.
 
 ## manifest.json
 
@@ -62,10 +65,10 @@ Schema: `https://smapi.io/schemas/manifest.json`. Required: `Name`, `Author`, `V
 {
   "$schema": "https://smapi.io/schemas/manifest.json",
   "Name": "Example Mod",
-  "Author": "James Kempf",
+  "Author": "Jomeeze",
   "Version": "%ProjectVersion%",
   "Description": "One sentence.",
-  "UniqueID": "JamesKempf.ExampleMod",
+  "UniqueID": "Jomeeze.ExampleMod",
   "EntryDll": "ExampleMod.dll",
   "MinimumApiVersion": "4.5.0",
   "UpdateKeys": [ "Nexus:12345" ]
@@ -138,7 +141,7 @@ Key APIs (from `IModHelper` / `Mod` in SMAPI source):
 - Game path is auto-detected from default install paths. If detection fails, create `~/stardewvalley.targets`:
   ```xml
   <Project><PropertyGroup>
-    <GamePath>/home/jkempf/.local/share/Steam/steamapps/common/Stardew Valley</GamePath>
+    <GamePath>$(HOME)/.local/share/Steam/steamapps/common/Stardew Valley</GamePath>
   </PropertyGroup></Project>
   ```
   Unverified: whether auto-detection finds this Steam path on Linux. Check the build output for path errors.
@@ -206,6 +209,18 @@ Extract the StardewXnbHack Linux release into the game folder and run `./Stardew
 1. Bump `<Version>` (C#) or manifest `Version` (CP) using semver.
 2. Run `./build-release.sh` to Release-build every `*/*.csproj` mod and collect the zips in `dist/` (`--deploy` also deploys to `Mods/`; `--help` for details). For CP, zip the `[CP] <ModName>` folder so the archive contains the folder.
 3. Upload to Nexus Mods (nexusmods.com/stardewvalley) and/or ModDrop. Add the page ID to `UpdateKeys` and release again so SMAPI update checks work.
+
+## Mod page deliverables (required for every mod)
+
+1. `<Mod>/NEXUS.md` holds two fenced blocks: **Short description** (plain text, at most 255 characters; state the count) and **Full description** (Nexus BBCode). Verify every claim against the code.
+2. Never put the user's real name or username in `NEXUS.md`, images, or any mod page text. The public handle is `Jomeeze`; use it for `Author`, UniqueIDs, and credits.
+3. `<Mod>/nexus/cover.svg` and `cover.png` (1280x720) are pixel art in the Stardew Valley style. Make them with `tools/cover/render.sh <Mod>/nexus --layout coop|action ...` (e.g. `--title`, `--ribbon` for coop, `--tagline` for action; full options in `tools/cover/README.md`). Don't draw them by hand.
+   - Each mod gets its own composition: a new layout module in `tools/cover/` (see "Adding a scene or layout" in the README). Keep the shared pixel-art look and the Stardew Valley font; don't reuse another mod's layout.
+   - Existing covers must stay byte-identical: re-render each one and `cmp` it against the committed `cover.svg`.
+4. The cover font ("Stardew Valley" by RRDome) is FontStruct non-commercial with attribution required:
+   - The full description must include: "Cover text uses the 'Stardew Valley' font by RRDome (https://fontstruct.com/fontstructions/show/1254619)."
+   - Never commit the font file (it is gitignored).
+   - Don't enroll the mod in Nexus Donation Points without the designer's permission.
 
 ## Rules for Claude
 

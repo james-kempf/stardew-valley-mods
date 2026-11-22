@@ -21,3 +21,12 @@ Content (unpacked)/
 # Collected release zips (build-release.sh)
 dist/
 docs/
+
+# Cover font (FontStruct non-commercial license; never commit)
+tools/cover/font/
+*.otf
+*.ttf
+
+# Python bytecode
+__pycache__/
+*.pyc

@@ -1,10 +1,10 @@
 {
   "$schema": "https://smapi.io/schemas/manifest.json",
   "Name": "Auto Split-Screen Co-op",
-  "Author": "James Kempf",
+  "Author": "Jomeeze",
   "Version": "%ProjectVersion%",
   "Description": "When the host loads a save with a local co-op farmhand, automatically opens split-screen and loads that farmhand.",
-  "UniqueID": "JamesKempf.AutoSplitScreenCoop",
+  "UniqueID": "Jomeeze.AutoSplitScreenCoop",
   "EntryDll": "AutoSplitScreenCoop.dll",
   "MinimumApiVersion": "4.5.0"
 }
