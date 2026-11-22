@@ -73,3 +73,7 @@ Open `~/.config/StardewValley/ErrorLogs/SMAPI-latest.txt` and search for `Auto S
 
 - **1.1.0:** Fixed the host losing its controller on Steam Deck and other gamepad hosts (player 2 was given controller One). New `PlayerIndex` default `Auto` picks a free controller. `HostUsesKeyboard` removed (detected automatically); old configs are migrated.
 - **1.0.0:** Initial release.
+
+## Credits
+
+Cover text (`nexus/cover.*`) uses the 'Stardew Valley' font by RRDome (https://fontstruct.com/fontstructions/show/1254619).

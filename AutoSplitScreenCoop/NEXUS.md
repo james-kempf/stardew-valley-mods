@@ -10,7 +10,6 @@ Load a save that has a local co-op farmhand and split-screen opens automatically
 
 ```bbcode
 [size=5][b]Auto Split-Screen Co-op[/b][/size]
-by James Kempf
 
 Load a save that has a local co-op farmhand, and the mod opens split-screen and loads that farmhand into the second screen for you. You don't press Start or pick a slot. Saves without an eligible farmhand load single player as normal.
 
@@ -104,4 +103,7 @@ The mod uses no Harmony patches and calls only the game's own split-screen and f
 [size=4][b]Version[/b][/size]
 1.1.0 - Fixed the host losing its controller on Steam Deck and other gamepad hosts (player 2 was given controller One). New PlayerIndex default Auto picks a free controller. HostUsesKeyboard removed (detected automatically); existing configs are migrated.
 1.0.0 - Initial release.
+
+[size=4][b]Credits[/b][/size]
+Cover text uses the 'Stardew Valley' font by RRDome ([url=https://fontstruct.com/fontstructions/show/1254619]https://fontstruct.com/fontstructions/show/1254619[/url]).
 ```
