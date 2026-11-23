@@ -1,9 +1,10 @@
 # Cover generator
 
-Makes a mod's Nexus cover, `<Mod>/nexus/cover.svg` and `cover.png` (1280x720). The art is Stardew Valley-style pixel art drawn on a 320x180 grid. Two layouts:
+Makes a mod's Nexus cover, `<Mod>/nexus/cover.svg` and `cover.png` (1280x720). The art is Stardew Valley-style pixel art drawn on a 320x180 grid. Three layouts:
 
-- `coop` (default, `gen_cover.py`): a wooden title sign with a ribbon under it, sky, hills and a fence, plus an optional scene on the right. Used by AutoSplitScreenCoop.
-- `action` (`layout_action.py`): a torch-lit mine cavern with its own 28-colour palette. Large title top-left with an outline and extruded shadow, plus an optional tagline under it. A slime lunges in from the lower left, and its whiff starburst lands only on the farmer's fading afterimages while the farmer rolls out along a motion arc in a burst of dust. Used by DodgeRoll.
+- `coop` (default, `gen_cover.py`): a wooden title sign with a ribbon under it, sky, hills and a fence, plus an optional scene on the right: a monitor split into P1 and P2 panes, each with the reference farmer (`reference/default_farmer.py` at 2x, feet on the pane ground, under a P1/P2 badge). P2 is the unmodified reference, red shirt included; P1 differs only in its shirt, recoloured to a lighter, more cyan blue than the overalls. 49 colours (21 scene colours plus the reference farmer's 28). Used by AutoSplitScreenCoop.
+- `action` (`layout_action.py`): a torch-lit mine cavern with its own 48-colour palette (22 scene colours plus 26 of the reference farmer's 28; the ball shows no shaded eye white or neck shadow). Large title top-left with an outline and extruded shadow, plus an optional tagline under it. A slime lunges in from the lower left, and its whiff starburst lands only on the farmer's fading afterimages, while the farmer, curled into a ball at 3x, rolls out along a motion arc in a burst of dust. The ball (`BALL`, 19x17 cells with its outline) is a pose edit of the reference farmer: drawn by hand in the reference's palette characters and per-part outlines, so it is not pixel-identical to the reference sprite. Its hair is the reference's shaggy mop: layered locks swept around the ball in the roll direction, dark at the roots (`D`, `C`) and lighter toward their ends (`B`, `A`), with dark `E`/`D` gaps between locks, a lumpy rounded top that hugs the ball, ragged strands hanging over the forehead and a side lock past the face. Its two afterimages are the same ball turned 180 and 90 degrees with `rot90`, in a dithered blue tint. Used by DodgeRoll.
+- `storm` (`layout_storm.py`): a farm at night in a thunderstorm with its own 52-colour palette (24 scene colours plus the reference farmer's 28). Storm clouds across the top, rain streaks, a farmhouse with a lit window and a bare tree on the dark hills. A forked bolt drops onto the raised hand of the reference farmer (drawn from `reference/default_farmer.py` at 2x, with the arm on the viewer's right raised in one straight diagonal); the ring on that hand glints inside a dithered flash halo; the flash lights the clouds, sky and grass around the strike. The title is stacked on the right, right-aligned and staggered, in electric yellow with a blue glow, with an optional tagline under it. Used by DeadlyLightning.
 
 ## Requirements
 
@@ -13,7 +14,7 @@ Makes a mod's Nexus cover, `<Mod>/nexus/cover.svg` and `cover.png` (1280x720). T
   2. `tools/cover/font/stardew-valley.otf` (gitignored)
   3. `~/.local/share/fonts/stardew-valley.otf`
 
-  `COVER_FONT=bitmap` uses a built-in 5x7 font instead. It only has the glyphs used by the default cover; the `action` layout refuses it.
+  `COVER_FONT=bitmap` uses a built-in 5x7 font instead. It only has the glyphs used by the default cover; the `action` and `storm` layouts refuse it.
 
 ## Font license
 
@@ -37,6 +38,12 @@ The DodgeRoll cover:
 tools/cover/render.sh DodgeRoll/nexus --layout action
 ```
 
+The DeadlyLightning cover:
+
+```bash
+tools/cover/render.sh DeadlyLightning/nexus --layout storm
+```
+
 `render.sh` runs three steps:
 
 ```bash
@@ -50,20 +57,32 @@ magick /tmp/cover_320.png -filter point -resize 1280x720 -strip MyMod/nexus/cove
 | Option | Default | Meaning |
 |---|---|---|
 | `--out-dir DIR` | required | Writes `DIR/cover.svg`. |
-| `--layout` | `coop` | `coop` or `action`. |
-| `--title LINE` | coop: `Auto` / `Split-Screen` / `Co-op`; action: `Dodge Roll` | One title line. Repeat the option for each line (coop only; `action` fits one line). A line too wide for the sign or cover is an error. |
+| `--layout` | `coop` | `coop`, `action` or `storm`. |
+| `--title LINE` | coop: `Auto` / `Split-Screen` / `Co-op`; action: `Dodge Roll`; storm: `Deadly` / `Lightning` | One title line. Repeat the option for each line (`action` fits one line, `storm` at most two). A line too wide for the sign or cover is an error. |
 | `--title-tops Y,Y,...` | tuned for the default title, otherwise centred | coop: cap-top y (on the 320x180 grid) of each line. |
-| `--title-scale N` | `2` | coop: integer scale for the title text. The action title is fixed at 3x. |
+| `--title-scale N` | `2` | coop: integer scale for the title text. The action and storm titles are fixed at 3x. |
 | `--ribbon TEXT` | `Player 2 joins automatically` | coop: ribbon text. Text too wide for the ribbon is an error. |
 | `--scene` | `split-screen` | coop: right-hand scene, `split-screen` (a monitor with P1/P2 farmers) or `none`. |
-| `--tagline TEXT` | none | action: optional line under the title. Text too wide is an error. |
+| `--tagline TEXT` | none | action, storm: optional line under the title. Text too wide is an error. |
 | `--name TEXT` | title lines joined with spaces | SVG `<title>`. |
 
-With no options except `--out-dir`, the output is the AutoSplitScreenCoop cover, byte-identical to `AutoSplitScreenCoop/nexus/cover.svg`. Check with `cmp`.
+With no options except `--out-dir`, the output is the AutoSplitScreenCoop cover, byte-identical to `AutoSplitScreenCoop/nexus/cover.svg`. The DodgeRoll and DeadlyLightning commands above reproduce their committed `cover.svg` byte for byte too. Check with `cmp`.
 
 ## Adding a scene or layout
 
 - Coop scene: write a `scene_<name>()` function inside `layout_coop()` in `gen_cover.py`, modeled on `scene_split_screen()`. Use the right-hand area, x 170-319 and y 20-140. Add the name to `SCENES` and dispatch it next to `scene_split_screen()`.
-- New layout: add a module like `layout_action.py` with its own `PAL` and a `draw(cv, args)` that returns the default SVG `<title>`; `cv` is the generator module with its helpers. Add the name to `--layout` and load it the way `layout_action()` does (by path, since `python3 -I` leaves the script directory off `sys.path`). Give it its own `random.Random`, so the coop output doesn't change.
+- New layout: add a module `layout_<name>.py` (like `layout_action.py` or `layout_storm.py`) with its own `PAL` and a `draw(cv, args)` that returns the default SVG `<title>`; `cv` is the generator module with its helpers. Add `<name>` to the `--layout` choices; `load_layout()` then loads the module by path (since `python3 -I` leaves the script directory off `sys.path`). Give it its own `random.Random`, so the other layouts' output doesn't change.
 
-`sprite()` blits a character map at an integer scale with an automatic ink outline and fails on out-of-bounds pixels. Use only palette keys and the `px`/`rect`/`panel`/`dither` helpers so the result stays pixel-exact. The art must be original: no game assets.
+`sprite()` blits a character map at an integer scale with an automatic ink outline and fails on out-of-bounds pixels. `outline=False` draws the cells only, for sprites that carry their own outline, such as the reference farmer.
+
+Farmers are built from the reference sprite data, not redrawn by hand (see `reference/README.md`):
+
+- `cv.reference_farmer()` loads `reference/default_farmer.py`: `ROWS` (14x29 cells, outlines included, `.` transparent) and `PALETTE` (`{char: (palette key, hex)}`).
+- In `draw()`, add the colours to the layout's palette (`PAL.update(dict(farmer.PALETTE.values()))`), build the cell map (`{char: key}`), and blit with `cv.sprite(rows, x, y, cmap, k=..., outline=False)` at an integer scale.
+- Make pose edits as an overlay on `ROWS` in the layout, using the reference's own characters, and leave every other cell as it is. `layout_storm.py`'s `RAISED_ARM` is the example: it pads the rows 2 cells to the right, draws the arm as one straight diagonal from the shoulder, stepping 1 cell across per 2 up (about 63 degrees) and as long as the reference's hanging arm (6 rows: shoulder, sleeve, cuff, wrist, 2x2 hand), and clears the hanging arm.
+- Draw props on top afterwards, such as the storm's ring band.
+- To recolour a part, map its palette keys to other keys in the cell map and leave the cells alone. The coop P1 farmer maps the shirt keys `sh`, `shd` and `sho` to `p1sh`, `p1shd` and `p1sho`.
+- A pose too far from the reference for an overlay, such as the action cover's curled ball, can be a new character grid in the reference's characters: its palette keys only (from `PALETTE`, no hand-typed farmer colours) and its per-part outlines (`E` hair, `m` skin, `Q` shirt, `Z` overalls, `X` shoes) in the grid itself, blitted with `outline=False`. It is a pose edit, not the reference sprite, so it is not pixel-identical to it.
+- To turn a sprite, rotate its rows in exact 90-degree steps, which keeps every pixel crisp. `layout_action.py`'s `rot90(rows, turns)` turns a char grid clockwise (negative `turns`: counter-clockwise); its afterimages draw the turned ball in a blue tint (`GHOST_TINT`, by the brightness of each reference colour), dithered.
+
+Apart from the reference farmer, use only palette keys and the `px`/`rect`/`panel`/`dither` helpers, so the result stays pixel-exact, and no game assets.

@@ -6,6 +6,7 @@ Layouts (--layout):
           under it, and a scene on the right (--scene). The defaults reproduce
           the AutoSplitScreenCoop cover.
   action  a cave action shot drawn by layout_action.py (DodgeRoll).
+  storm   a night thunderstorm drawn by layout_storm.py (DeadlyLightning).
 See tools/cover/README.md for the full pipeline.
 
 Text uses the "Stardew Valley" FontStruct font by RRDome
@@ -30,11 +31,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SCENES = ("split-screen", "none")
 ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
 ap.add_argument("--out-dir", required=True, help="directory to write cover.svg into, e.g. MyMod/nexus")
-ap.add_argument("--layout", choices=("coop", "action"), default="coop",
-                help="coop: title sign + ribbon + right-hand scene (default); action: cave action shot")
+ap.add_argument("--layout", choices=("coop", "action", "storm"), default="coop",
+                help="coop: title sign + ribbon + right-hand scene (default); action: cave action shot; "
+                     "storm: night thunderstorm")
 ap.add_argument("--title", action="append", metavar="LINE",
                 help="title line; repeat for each line (default: Auto / Split-Screen / Co-op for coop, "
-                     "Dodge Roll for action)")
+                     "Dodge Roll for action, Deadly / Lightning for storm)")
 ap.add_argument("--title-tops", metavar="Y,Y,...",
                 help="cap-top y of each title line (default: tuned values for the default title, else centred)")
 ap.add_argument("--title-scale", type=int, default=2, help="integer scale for title text (default 2)")
@@ -43,7 +45,7 @@ ap.add_argument("--name", help="SVG <title>; default: title lines joined with sp
 ap.add_argument("--scene", choices=SCENES, default="split-screen",
                 help="coop right-hand scene: split-screen (monitor with P1/P2 farmers) or none")
 ap.add_argument("--tagline", default="",
-                help="action layout: optional line under the title (default: none)")
+                help="action and storm layouts: optional line under the title (default: none)")
 ARGS = ap.parse_args()
 
 PAL = {
@@ -63,13 +65,14 @@ PAL = {
     "g1": "#7cbf47",      # grass light
     "rib": "#2f6b1f",     # ribbon green
     "ribd": "#1d4613",
-    "skin": "#f2c79b",
-    "blue": "#3d7cc9",
-    "blued": "#2a568f",
-    "red": "#c94a3d",
-    "redd": "#8f2f26",
-    "straw": "#e8b64a",
-    "strawd": "#9a6a1e",
+    "blue": "#3d7cc9",    # P1 badge
+    "red": "#c94a3d",     # P2 badge, flowers
+    # P1 farmer's shirt: the reference shirt (sh, shd, sho) recoloured blue, same light/dark steps,
+    # lighter and more cyan than the overalls. The other farmer colours come from
+    # reference/default_farmer.py when the split-screen scene draws.
+    "p1sh": "#3a9ad8",    # shirt
+    "p1shd": "#2a72b0",   # shirt, shade
+    "p1sho": "#123a63",   # shirt outline
 }
 
 grid = [["s1"] * W for _ in range(H)]
@@ -270,16 +273,20 @@ def draw_text(s, cx, top, scale, fill, outline=None, shadow=None, track=1, bold=
 
 
 # ---------------------------------------------------------------- sprites
-def sprite(rows, x0, y0, cmap, k=3):
+def sprite(rows, x0, y0, cmap, k=3, outline=True):
     """Blit a cell sprite at integer scale k with a 1-cell ink outline (orthogonal,
-    so corners stay rounded). (x0, y0) is the outline's top-left pixel."""
+    so corners stay rounded). (x0, y0) is the outline's top-left pixel.
+    outline=False draws the cells only (for sprites that carry their own
+    outline, like the reference farmer); (x0, y0) is then cell (0, 0)."""
     cells = {}
     for j, line in enumerate(rows):
         assert len(line) == len(rows[0]), line
         for i, v in enumerate(line):
             if v != ".":
                 cells[(i + 1, j + 1)] = cmap[v]
-    ring = ortho_outline(cells)
+    if not outline:
+        cells = {(i - 1, j - 1): c for (i, j), c in cells.items()}
+    ring = ortho_outline(cells) if outline else set()
     for (i, j) in ring | set(cells):
         assert 0 <= x0 + i * k and x0 + (i + 1) * k <= W and 0 <= y0 + j * k and y0 + (j + 1) * k <= H, \
             "sprite pixel out of bounds"
@@ -581,53 +588,22 @@ def layout_coop():
                     px(cxp + 6 + dx, HZ + 15 + dy, "g3")
         set_clip(None)
 
-        FARMER = [
-            "......oooooooo......",
-            ".....oSSSSSSSSo.....",
-            ".....oSSSSSSSso.....",
-            ".....oSSSSSSSso.....",
-            ".....oRRRRRRRRo.....",
-            "..ooooSSSSSSSsoooo..",
-            ".oSSSSSSSSSSSSSSSso.",
-            "..oooooooooooooooo..",
-            ".....oKKKKKKKKo.....",
-            ".....oKKKKKKKKo.....",
-            ".....oKoKKKKoKo.....",
-            ".....oKoKKKKoKo.....",
-            ".....oKKKKKKKKo.....",
-            "......oKKKKKKo......",
-            "....ooCCCCCCCCoo....",
-            "...oCCCcCCCCcCCCo...",
-            "..oCCoCcCCCCcCoCCo..",
-            "..oCCoCcCCCCcCoCCo..",
-            "..oKKoCcCCCCcCoKKo..",
-            "...oo.oCCCCCCo.oo...",
-            "......oDDDDDDo......",
-            "......oDDooDDo......",
-            "......oDDooDDo......",
-            ".....oBBBooBBBo.....",
-            ".....oooo..oooo.....",
-        ]
-
-
-        def farmer(x0, y0, shirt, dark, k=2):
-            cmap = {"o": "ink", "S": "straw", "s": "strawd", "R": "red", "K": "skin",
-                    "C": shirt, "c": dark, "D": "wd", "B": "ink"}
-            for j, line in enumerate(FARMER):
-                assert len(line) == 20
-                for i, v in enumerate(line):
-                    if v in cmap:
-                        rect(x0 + i * k, y0 + j * k, k, k, cmap[v])
-            # ground shadow
-            for i in range(4 * k, 16 * k):
-                px(x0 + i, y0 + len(FARMER) * k, "g3")
-                px(x0 + i, y0 + len(FARMER) * k + 1, "g3" if i % 2 else "g2")
-
-
-        fy = PY0 + PH - 55
-        for (x0, sh, dk) in ((LX, "blue", "blued"), (RXp, "red", "redd")):
+        # farmers: the reference sprite (reference/default_farmer.py), unmodified for P2; P1 only swaps
+        # the shirt keys for blue ones. Feet on the pane ground, centred, under the badge.
+        farmer = reference_farmer()
+        PAL.update(dict(farmer.PALETTE.values()))
+        ref = {c: key for c, (key, _) in farmer.PALETTE.items()}
+        p1 = dict(ref, **{c: {"sh": "p1sh", "shd": "p1shd", "sho": "p1sho"}.get(key, key) for c, key in ref.items()})
+        k = 2
+        fw, fh = k * len(farmer.ROWS[0]), k * len(farmer.ROWS)
+        fy = PY0 + PH - 3 - fh                     # shoes 2 px above the pane bottom; shadow fills them
+        for (x0, cmap) in ((LX, p1), (RXp, ref)):
             set_clip(pane_clip(x0))
-            farmer(x0 + PW // 2 - 20, fy, sh, dk)
+            fx = x0 + (PW - fw) // 2
+            for i in range(fw - 4):                # ground shadow just under the shoes
+                px(fx + 2 + i, fy + fh, "g3")
+                px(fx + 2 + i, fy + fh + 1, "g3" if i % 2 else "g2")
+            sprite(farmer.ROWS, fx, fy, cmap, k=k, outline=False)
         set_clip(None)
 
 
@@ -642,7 +618,7 @@ def layout_coop():
 
         for (x0, lab, f) in ((LX, "P1", "blue"), (RXp, "P2", "red")):
             set_clip(pane_clip(x0))
-            badge(x0 + PW // 2, PY0 + 4, lab, f)
+            badge(x0 + PW // 2, PY0 + 3, lab, f)   # rows PY0+2..PY0+17, clear of the farmer below
         set_clip(None)
 
         # split divider: drawn last so no pane content overlaps it; spans exactly the
@@ -699,19 +675,29 @@ def emit(path, pal, name):
     print(f"colors used: {len(used)}; rects: {sum(len(v) for v in by_color.values())}")
 
 
-def layout_action():
-    """Load layout_action.py by path (python -I drops the script dir from sys.path)."""
+def load_module(name, path):
+    """Load a module by path (python -I drops the script dir from sys.path)."""
     import importlib.util
-    spec = importlib.util.spec_from_file_location("layout_action", os.path.join(HERE, "layout_action.py"))
+    spec = importlib.util.spec_from_file_location(name, path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
 
 
+def load_layout(name):
+    return load_module(f"layout_{name}", os.path.join(HERE, f"layout_{name}.py"))
+
+
+def reference_farmer():
+    """The default farmer's sprite data, reference/default_farmer.py: ROWS (14x29
+    cells, outlines included, "." transparent) and PALETTE {char: (key, hex)}."""
+    return load_module("default_farmer", os.path.join(HERE, "reference", "default_farmer.py"))
+
+
 if ARGS.layout == "coop":
     pal, name = PAL, layout_coop()
 else:
-    act = layout_action()
-    pal, name = act.PAL, act.draw(sys.modules[__name__], ARGS)
+    lay = load_layout(ARGS.layout)
+    pal, name = lay.PAL, lay.draw(sys.modules[__name__], ARGS)
 os.makedirs(ARGS.out_dir, exist_ok=True)
 emit(os.path.join(ARGS.out_dir, "cover.svg"), pal, ARGS.name or name)

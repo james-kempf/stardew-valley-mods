@@ -1,0 +1,13 @@
+{
+  "$schema": "https://smapi.io/schemas/manifest.json",
+  "Name": "Deadly Lightning",
+  "Author": "Jomeeze",
+  "Version": "%ProjectVersion%",
+  "Description": "Wearing a ring outdoors in a thunderstorm gives a very small chance each 10 minutes of being struck by lightning and knocked out.",
+  "UniqueID": "Jomeeze.DeadlyLightning",
+  "EntryDll": "DeadlyLightning.dll",
+  "MinimumApiVersion": "4.5.0",
+  "Dependencies": [
+    { "UniqueID": "spacechase0.GenericModConfigMenu", "IsRequired": false }
+  ]
+}

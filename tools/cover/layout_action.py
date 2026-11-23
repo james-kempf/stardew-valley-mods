@@ -3,8 +3,8 @@
 A torch-lit mine cavern. Big title top-left with a chunky outline and an
 extruded shadow, and an optional tagline under it (--tagline). A green slime
 lunges from the lower left and hits only the farmer's fading afterimages
-(i-frames); the farmer rolls out along a curved motion arc to the lower right
-in a burst of dust.
+(i-frames); the farmer, curled into a ball in the reference farmer's palette and
+outlines, rolls out along a curved motion arc to the lower right in a burst of dust.
 
 gen_cover.py calls draw(cv, args) with itself as `cv` (pixel helpers, font,
 sprite()) and emits the grid with PAL from this module. Uses its own RNG, so
@@ -33,45 +33,53 @@ PAL = {
     "gh0": "#34508f",     # afterimage
     "gh1": "#6c9ee0",
     "gh2": "#c2e6ff",
-    "skin": "#f2c79b",
-    "blue": "#3d7cc9",
-    "blued": "#2a568f",
-    "red": "#c94a3d",
-    "straw": "#e8b64a",
-    "strawd": "#9a6a1e",
     "wm": "#8b5a2b",
     "wd": "#4e2f14",
     "dust": "#d2bc94",
     "white": "#ffffff",
+    # draw() adds the farmer's 28 colours from reference/default_farmer.py
 }
 
 DEFAULT_TITLE = ["Dodge Roll"]
 HORIZON = 112          # first floor row
 
-# farmer curled into a ball rolling right: shirt back (left), straw hat tipped
-# forward (top right), face and hands tucked in, knees and boots (bottom right)
+# The farmer curled into a ball rolling right. A pose edit of the reference farmer
+# (reference/default_farmer.py): its characters and colours, and its per-part outlines (E hair,
+# m skin, Q shirt, Z overalls, X shoes), so the ball carries its own outline and is drawn with
+# outline=False. Brick-red shirt back with the bright strap (T, shade t) running down to its button
+# (U) on the overalls seat (left); swept hair on top with its light-to-dark ramp (A B C D); the face
+# tucked under the fringe (right) with the forehead shadow, brow and one eye; the hand hugging the
+# blue knees; two-tone brown shoes with their orange highlight under the knees (bottom right).
+# The hair is the reference's shaggy mop: layered locks swept around the ball in the roll direction,
+# darker at the roots on top (D, C) and lighter toward their ends (B, A), with dark E/D gaps between
+# locks; a lumpy rounded top, ragged strands hanging over the forehead, and a side lock past the face.
 BALL = [
-    ".....CCCSSS......",
-    "...CCCCSSSSS.....",
-    "..CCCCSSSSSSS....",
-    ".CCcCCSSSSSSSs...",
-    ".CCcCCRRRRRRRR...",
-    "CCcCCSSSSSSSSSSSs",
-    "CCcCCCKKKoKKDDD..",
-    "CCcCCCCKKKKDDDD..",
-    "CCcCCCCCKKDDDDD..",
-    "CCCcCCCCCCKKDDD..",
-    ".DDcCCCCCKKKDD...",
-    ".DDDDDDDDDDDDD...",
-    "..dDDDDDdBBBB....",
-    "...dddddBBBB.....",
-    ".....dddBB.......",
+    ".....EEEEE.EEE.....",
+    "....QEECEDEEDCEE...",
+    "...QEDDCCEDDDDCCE..",
+    "..QREDCCBBDDDCCBBE.",
+    ".QRRtEDCCBBDDDCCBBE",
+    ".QRtTECCBBAADCCBBAE",
+    "QRrtTRDCCBfAfDCCBBE",
+    "QRrtTRRDfbbbKKKEADE",
+    "QRrtTRRRmKKWeKKKkm.",
+    "QRrtTRRRRmKKKKkkmZ.",
+    "QRrtTrRRRRmmkkmOOOZ",
+    ".QrtTQrRRRRQmKKmOOZ",
+    ".ZotUZQrrrrQmKKmOqZ",
+    "..ZqOOOZQQQQmmmOqZ.",
+    "..ZqqoOOoXsSSSXqZ..",
+    "....ZqqqXzsSSssX...",
+    "......ZZZXXXXXX....",
 ]
-BALL_MAP = {"C": "blue", "c": "blued", "S": "straw", "s": "strawd", "R": "red",
-            "K": "skin", "o": "ink", "D": "wm", "d": "wd", "B": "ink"}
-# afterimage tint by brightness of the source colour
-GHOST_TINT = {"ink": "gh0", "blued": "gh0", "wd": "gh0", "strawd": "gh1", "blue": "gh1",
-              "wm": "gh1", "red": "gh1", "straw": "gh2", "skin": "gh2"}
+
+# Afterimage tint by brightness of the reference colour: its outlines and darks, mids and lights.
+GHOST_TINT = {"brow": "gh0", "strapd": "gh0", "ovo": "gh0", "hairo": "gh0", "sho": "gh0", "skino": "gh0",
+              "shoeo": "gh0", "strap": "gh0", "ovd": "gh0", "shd": "gh0", "shoed": "gh0", "hair3": "gh0",
+              "neck": "gh0", "iris": "gh0",
+              "sh": "gh1", "shoem": "gh1", "ovm": "gh1", "hair2": "gh1", "ov": "gh1", "shoeh": "gh1",
+              "skinf": "gh1", "hair1": "gh1",
+              "hair": "gh2", "btn": "gh2", "skind": "gh2", "eyews": "gh2", "skin": "gh2", "eyew": "gh2"}
 
 # green slime stretched into a lunge toward the upper right
 SLIME = [
@@ -104,12 +112,11 @@ FLAME_MAP = {"F": "gl1", "Y": "gl2", "W": "glc"}
 BAYER = ((0.0, 0.5), (0.75, 0.25))
 
 
-def rot_cw(rows):
-    return ["".join(r) for r in zip(*rows[::-1])]
-
-
-def rot_ccw(rows):
-    return ["".join(r) for r in zip(*rows)][::-1]
+def rot90(rows, turns=1):
+    """Char grid turned clockwise by 90 degrees `turns` times (negative: counter-clockwise)."""
+    for _ in range(turns % 4):
+        rows = ["".join(r) for r in zip(*rows[::-1])]
+    return list(rows)
 
 
 def draw(cv, args):
@@ -283,6 +290,9 @@ def draw(cv, args):
                     if dense or (x + y) % 2 == 0:
                         px(x, y, "fl0")
 
+    farmer = cv.reference_farmer()
+    PAL.update(dict(farmer.PALETTE.values()))
+    cmap = {c: key for c, (key, _) in farmer.PALETTE.items()}
     k = 3
     DX = 18                                # action shift right, balancing the right edge
     FX, FY = 210 + DX, 113                 # farmer outline box x228-284, y113-163
@@ -308,22 +318,18 @@ def draw(cv, args):
 
     # ------------------------------------------------------------ afterimages
     def ghost(rows, x0, y0, keep):
-        cells = {}
+        """The ball in the blue afterimage tint, keeping only the pixels where keep(x, y)."""
         for j, line in enumerate(rows):
             for i, v in enumerate(line):
                 if v != ".":
-                    cells[(i + 1, j + 1)] = GHOST_TINT[BALL_MAP[v]]
-        for (i, j) in cv.ortho_outline(cells):
-            cells[(i, j)] = "gh0"
-        for (i, j), c in cells.items():
-            for dy in range(k):
-                for dx in range(k):
-                    x, y = x0 + i * k + dx, y0 + j * k + dy
-                    if keep(x, y):
-                        px(x, y, c)
+                    for dy in range(k):
+                        for dx in range(k):
+                            x, y = x0 + i * k + dx, y0 + j * k + dy
+                            if keep(x, y):
+                                px(x, y, GHOST_TINT[cmap[v]])
 
-    ghost(rot_cw(rot_cw(BALL)), 90 + DX, 92, lambda x, y: (x + y) % 2 == 0)
-    ghost(rot_ccw(BALL), 152 + DX, 96, lambda x, y: not (x % 2 == 0 and y % 2 == 0))
+    ghost(rot90(BALL, 2), 90 + DX, 92, lambda x, y: (x + y) % 2 == 0)
+    ghost(rot90(BALL, -1), 152 + DX, 96, lambda x, y: not (x % 2 == 0 and y % 2 == 0))
 
     # ------------------------------------------------------------ slime lunge + whiff
     # lunge streaks behind the slime, pointing back down-left
@@ -367,6 +373,6 @@ def draw(cv, args):
         px(x + 1, y + 1, "fl1")
 
     # ------------------------------------------------------------ the farmer
-    cv.sprite(BALL, FX, FY, BALL_MAP, k=k)
+    cv.sprite(BALL, FX, FY, cmap, k=k, outline=False)
 
     return " ".join(title)

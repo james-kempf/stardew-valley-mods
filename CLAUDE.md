@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Purpose
 
-Monorepo for Stardew Valley mods (SMAPI C# mods and Content Patcher content packs). Mods: `AutoSplitScreenCoop`, `DodgeRoll` (both C#).
+Monorepo for Stardew Valley mods (SMAPI C# mods and Content Patcher content packs). Mods: `AutoSplitScreenCoop`, `DodgeRoll`, `DeadlyLightning` (all C#).
 
 ## Versions (checked 2026-11-21)
 
@@ -51,7 +51,7 @@ stardew-valley-mods/
     manifest.json
     content.json
     assets/
-  tools/cover/                   # cover generator (gen_cover.py + coop layout, layout_<name>.py per other layout, render.sh, README.md)
+  tools/cover/                   # cover generator (gen_cover.py + coop layout, layout_<name>.py per other layout: action, storm; render.sh, README.md)
 ```
 
 - One folder per mod. Add C# projects to the solution with `dotnet sln add <ModName>/<ModName>.csproj`.
@@ -214,9 +214,10 @@ Extract the StardewXnbHack Linux release into the game folder and run `./Stardew
 
 1. `<Mod>/NEXUS.md` holds two fenced blocks: **Short description** (plain text, at most 255 characters; state the count) and **Full description** (Nexus BBCode). Verify every claim against the code.
 2. Never put the user's real name or username in `NEXUS.md`, images, or any mod page text. The public handle is `Jomeeze`; use it for `Author`, UniqueIDs, and credits.
-3. `<Mod>/nexus/cover.svg` and `cover.png` (1280x720) are pixel art in the Stardew Valley style. Make them with `tools/cover/render.sh <Mod>/nexus --layout coop|action ...` (e.g. `--title`, `--ribbon` for coop, `--tagline` for action; full options in `tools/cover/README.md`). Don't draw them by hand.
+3. `<Mod>/nexus/cover.svg` and `cover.png` (1280x720) are pixel art in the Stardew Valley style. Make them with `tools/cover/render.sh <Mod>/nexus --layout coop|action|storm ...` (e.g. `--title`, `--ribbon` for coop, `--tagline` for action and storm; full options in `tools/cover/README.md`). Don't draw them by hand.
    - Each mod gets its own composition: a new layout module in `tools/cover/` (see "Adding a scene or layout" in the README). Keep the shared pixel-art look and the Stardew Valley font; don't reuse another mod's layout.
-   - Existing covers must stay byte-identical: re-render each one and `cmp` it against the committed `cover.svg`.
+   - Existing covers must stay byte-identical unless a change to them is intended: re-render each one and `cmp` it against the committed `cover.svg`.
+   - Farmers on covers are built from the reference sprite data (`tools/cover/reference/default_farmer.py`), with pose edits as needed, not hand-redrawn (see that folder's README).
 4. The cover font ("Stardew Valley" by RRDome) is FontStruct non-commercial with attribution required:
    - The full description must include: "Cover text uses the 'Stardew Valley' font by RRDome (https://fontstruct.com/fontstructions/show/1254619)."
    - Never commit the font file (it is gitignored).
