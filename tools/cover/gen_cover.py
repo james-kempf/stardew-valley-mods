@@ -7,6 +7,7 @@ Layouts (--layout):
           the AutoSplitScreenCoop cover.
   action  a cave action shot drawn by layout_action.py (DodgeRoll).
   storm   a night thunderstorm drawn by layout_storm.py (DeadlyLightning).
+  speed   a sprint past a giant hourglass drawn by layout_speed.py (PerformanceBundle).
 See tools/cover/README.md for the full pipeline.
 
 Text uses the "Stardew Valley" FontStruct font by RRDome
@@ -31,12 +32,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SCENES = ("split-screen", "none")
 ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
 ap.add_argument("--out-dir", required=True, help="directory to write cover.svg into, e.g. MyMod/nexus")
-ap.add_argument("--layout", choices=("coop", "action", "storm"), default="coop",
+ap.add_argument("--layout", choices=("coop", "action", "storm", "speed"), default="coop",
                 help="coop: title sign + ribbon + right-hand scene (default); action: cave action shot; "
-                     "storm: night thunderstorm")
+                     "storm: night thunderstorm; speed: sprint past an hourglass")
 ap.add_argument("--title", action="append", metavar="LINE",
                 help="title line; repeat for each line (default: Auto / Split-Screen / Co-op for coop, "
-                     "Dodge Roll for action, Deadly / Lightning for storm)")
+                     "Dodge Roll for action, Deadly / Lightning for storm, Performance / Bundle for speed)")
 ap.add_argument("--title-tops", metavar="Y,Y,...",
                 help="cap-top y of each title line (default: tuned values for the default title, else centred)")
 ap.add_argument("--title-scale", type=int, default=2, help="integer scale for title text (default 2)")
@@ -45,7 +46,7 @@ ap.add_argument("--name", help="SVG <title>; default: title lines joined with sp
 ap.add_argument("--scene", choices=SCENES, default="split-screen",
                 help="coop right-hand scene: split-screen (monitor with P1/P2 farmers) or none")
 ap.add_argument("--tagline", default="",
-                help="action and storm layouts: optional line under the title (default: none)")
+                help="action, storm and speed layouts: optional line under the title (default: none)")
 ARGS = ap.parse_args()
 
 PAL = {

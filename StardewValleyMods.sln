@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DodgeRoll", "DodgeRoll\Dodg
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeadlyLightning", "DeadlyLightning\DeadlyLightning.csproj", "{CB4D0F01-937C-41EC-9BE1-FCC3A7804159}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PerformanceBundle", "PerformanceBundle\PerformanceBundle.csproj", "{D14426B9-12FD-4A4D-9525-E5CD5CE63626}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{CB4D0F01-937C-41EC-9BE1-FCC3A7804159}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB4D0F01-937C-41EC-9BE1-FCC3A7804159}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CB4D0F01-937C-41EC-9BE1-FCC3A7804159}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D14426B9-12FD-4A4D-9525-E5CD5CE63626}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D14426B9-12FD-4A4D-9525-E5CD5CE63626}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D14426B9-12FD-4A4D-9525-E5CD5CE63626}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D14426B9-12FD-4A4D-9525-E5CD5CE63626}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

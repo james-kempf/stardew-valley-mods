@@ -1,0 +1,13 @@
+{
+  "$schema": "https://smapi.io/schemas/manifest.json",
+  "Name": "Performance Bundle",
+  "Author": "Jomeeze",
+  "Version": "%ProjectVersion%",
+  "Description": "Smooths garbage collection and pre-compiles game code to reduce stutter, and reports frame spikes, asset invalidation storms and settings that slow the game.",
+  "UniqueID": "Jomeeze.PerformanceBundle",
+  "EntryDll": "PerformanceBundle.dll",
+  "MinimumApiVersion": "4.5.0",
+  "Dependencies": [
+    { "UniqueID": "spacechase0.GenericModConfigMenu", "IsRequired": false }
+  ]
+}
